@@ -11,7 +11,7 @@ namespace HRMS.Controllers
         public static List<Employee> employes = new List<Employee>
         {
             new Employee {Id = 1 ,Name = "Alice", Position = "Developer",Email="Alice@gmail.com" ,BrithDate =new DateTime(2000,1,25)},
-            new Employee {Id = 2 ,Name = "Bob", Position = "Designer",Email="Bob@gmail.com"  ,BrithDate =new DateTime(1996,1,22)},
+            new Employee {Id = 1 ,Name = "Bob", Position = "Designer",Email="Bob@gmail.com"  ,BrithDate =new DateTime(1996,1,22)},
             new Employee {Id = 3 ,Name = "Charlie", Position = "Manager",Email="Charlie@gmail.com" ,BrithDate =new DateTime(1991,1,21) }
         };
         [HttpGet("get-by-criteria")]
@@ -91,6 +91,18 @@ namespace HRMS.Controllers
             }
             employes.Remove(employee);
             return Ok("deleted succesfully");
+        }
+        [HttpGet("Test")]
+        public IActionResult Test()
+        {
+             var da = employes.LastOrDefault()?.Id ?? 0;
+            return Ok(da);
+        }
+        [HttpGet("Test2")]
+        public IActionResult Test2()
+        {
+             var da = employes.FirstOrDefault().Id+1;
+            return Ok(da);
         }
     }
 }
