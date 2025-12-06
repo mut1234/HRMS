@@ -14,7 +14,6 @@ namespace HRMS.Models
         public string? Email { get; set; }
 
         public string Name { get; set; }
-        public string Position { get; set; }
         public decimal Salary { get; set; }
         public DateTime? BrithDate { get; set; }
         public Department Department { get; set; }
@@ -24,6 +23,11 @@ namespace HRMS.Models
         public Employee Manager { get; set; }
         [ForeignKey("Manager")]
         public long? ManagerId { get; set; }
+
+        public Lookup Lookup { get; set; }
+
+        [ForeignKey("Lookup")]
+        public long PositionId { get; set; }
 
     }
 }

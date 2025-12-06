@@ -2,7 +2,7 @@
 {
     public class SearchEmployeeDto
     {
-        public string? position { get; set; }
+        public long? positionId { get; set; }
         public string? name { get; set; }
     }
 }

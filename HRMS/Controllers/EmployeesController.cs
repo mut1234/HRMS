@@ -9,12 +9,12 @@ namespace HRMS.Controllers
     [ApiController]
     public class EmployeesController : ControllerBase
     {
-        public static List<Employee> employes = new List<Employee>
-        {
-            new Employee {Id = 1 ,Name = "Alice", Position = "Developer",Email="Alice@gmail.com" ,BrithDate =new DateTime(2000,1,25)},
-            new Employee {Id = 1 ,Name = "Bob", Position = "Designer",Email="Bob@gmail.com"  ,BrithDate =new DateTime(1996,1,22)},
-            new Employee {Id = 3 ,Name = "Charlie", Position = "Manager",Email="Charlie@gmail.com" ,BrithDate =new DateTime(1991,1,21) }
-        };
+        //public static List<Employee> employes = new List<Employee>
+        //{
+        //    new Employee {Id = 1 ,Name = "Alice", Position = "Developer",Email="Alice@gmail.com" ,BrithDate =new DateTime(2000,1,25)},
+        //    new Employee {Id = 1 ,Name = "Bob", Position = "Designer",Email="Bob@gmail.com"  ,BrithDate =new DateTime(1996,1,22)},
+        //    new Employee {Id = 3 ,Name = "Charlie", Position = "Manager",Email="Charlie@gmail.com" ,BrithDate =new DateTime(1991,1,21) }
+        //};
 
         private readonly HRMSContext _dbContext;
         public EmployeesController(HRMSContext dbContext)
@@ -27,14 +27,16 @@ namespace HRMS.Controllers
             var result = from emp in _dbContext.Employees
                          from dep in _dbContext.Departments.Where(d => d.Id == emp.DepartmentId).DefaultIfEmpty() //left join
                          from mgr in _dbContext.Employees.Where(m => m.Id == emp.ManagerId).DefaultIfEmpty() //left join
-                             //join dep in _dbContext.Departments on emp.Id equals dep.
-                         where (employeeDto.position == null || emp.Position.ToUpper().Contains(employeeDto.position.ToUpper()))&&
+                         from pos in _dbContext.Lookups.Where(p => p.Id == emp.PositionId) 
+                                                                                                            //join dep in _dbContext.Departments on emp.Id equals dep.
+                         where
+                         (employeeDto.positionId == null || emp.PositionId == employeeDto.positionId)&&
                          (employeeDto.name == null || emp.Name.ToUpper().Contains(employeeDto.name.ToUpper()))
                          orderby emp.Id descending
                          select new EmployeeDto
                          {   Id = emp.Id,
                              Name = emp.FirstName + " " + emp.LastName,
-                             Position = emp.Position,
+                             PositionName  = pos.Name,
                              BrithDate = emp.BrithDate,
                              Email = emp.Email,
                              Salary = emp.Salary,
@@ -59,7 +61,7 @@ namespace HRMS.Controllers
             {
                 Id = emp.Id,
                 Name = emp.FirstName + " " + emp.LastName,
-                Position = emp.Position,
+              //  Position = emp.Position,
                 BrithDate = emp.BrithDate,
                 Email = emp.Email
             };
@@ -68,17 +70,17 @@ namespace HRMS.Controllers
         [HttpPost("add")]
         public IActionResult Add([FromBody] SaveEmployeeDto employeeDto)
         {
-            long newId = _dbContext.Employees.Any() ? employes.Max(e => e.Id) + 1 :1;
+         //   long newId = _dbContext.Employees.Any() ? employes.Max(e => e.Id) + 1 :1;
             var newEmployee = new Employee
             {
-                Id = newId,
+                Id = 0,
                 FirstName = employeeDto.FirstName,
                 LastName = employeeDto.LastName,
                 Email = employeeDto.Email,
-                Position = employeeDto.Position,
+               // Position = employeeDto.Position,
                 BrithDate = employeeDto.BrithDate
             };
-            employes.Add(newEmployee);
+            _dbContext.Employees.Add(newEmployee);
             return Ok(newEmployee);
         }
         [HttpPut("update")]
@@ -93,7 +95,7 @@ namespace HRMS.Controllers
             emp.LastName = updateDto.LastName;
             emp.Email = updateDto.Email;
             emp.BrithDate = updateDto.BrithDate;
-            emp.Position = updateDto.Position;
+         //   emp.Position = updateDto.Position;
 
             return Ok("updated succesfully");
         }
@@ -113,13 +115,13 @@ namespace HRMS.Controllers
         [HttpGet("Test")]
         public IActionResult Test()
         {
-             var da = employes.LastOrDefault()?.Id ?? 0;
+             var da = _dbContext.Employees.LastOrDefault()?.Id ?? 0;
             return Ok(da);
         }
         [HttpGet("Test2")]
         public IActionResult Test2()
         {
-             var da = employes.FirstOrDefault().Id+1;
+             var da = _dbContext.Employees.FirstOrDefault().Id+1;
             return Ok(da);
         }
         #endregion
