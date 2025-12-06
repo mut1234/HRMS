@@ -2,8 +2,9 @@
 {
     public class DepartmentDto
     {
-        public int Id { get; set; }
+        public long Id { get; set; }
         public string Name { get; set; }
         public string Descrip { get; set; }
+        public int FloorNumber { get; set; }
     }
 }

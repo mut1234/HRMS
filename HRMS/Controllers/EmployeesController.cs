@@ -1,4 +1,5 @@
-﻿using HRMS.Dto.Employees;
+﻿using HRMS.DbContexts;
+using HRMS.Dto.Employees;
 using HRMS.Models;
 using Microsoft.AspNetCore.Mvc;
 
@@ -14,19 +15,34 @@ namespace HRMS.Controllers
             new Employee {Id = 1 ,Name = "Bob", Position = "Designer",Email="Bob@gmail.com"  ,BrithDate =new DateTime(1996,1,22)},
             new Employee {Id = 3 ,Name = "Charlie", Position = "Manager",Email="Charlie@gmail.com" ,BrithDate =new DateTime(1991,1,21) }
         };
+
+        private readonly HRMSContext _dbContext;
+        public EmployeesController(HRMSContext dbContext)
+        {
+            _dbContext = dbContext;
+        }
         [HttpGet("get-by-criteria")]
         public IActionResult GetByCriteria([FromQuery] SearchEmployeeDto employeeDto)
         {
-            var result = from emp in employes
+            var result = from emp in _dbContext.Employees
+                         from dep in _dbContext.Departments.Where(d => d.Id == emp.DepartmentId).DefaultIfEmpty() //left join
+                         from mgr in _dbContext.Employees.Where(m => m.Id == emp.ManagerId).DefaultIfEmpty() //left join
+                             //join dep in _dbContext.Departments on emp.Id equals dep.
                          where (employeeDto.position == null || emp.Position.ToUpper().Contains(employeeDto.position.ToUpper()))&&
                          (employeeDto.name == null || emp.Name.ToUpper().Contains(employeeDto.name.ToUpper()))
                          orderby emp.Id descending
                          select new EmployeeDto
-                         { Id = emp.Id,
+                         {   Id = emp.Id,
                              Name = emp.FirstName + " " + emp.LastName,
                              Position = emp.Position,
                              BrithDate = emp.BrithDate,
-                             Email = emp.Email
+                             Email = emp.Email,
+                             Salary = emp.Salary,
+                             DepartmentId = emp.DepartmentId,
+                             DepartmentName = dep.Name,
+                             MangerId = emp.ManagerId,
+
+
                          };
             return Ok(result);//200
         }
@@ -34,7 +50,7 @@ namespace HRMS.Controllers
         [HttpGet("get-by-id/{id}")]//route parameter
         public IActionResult GetById(long id)
         {
-            var emp = employes.FirstOrDefault(e => e.Id == id);
+            var emp = _dbContext.Employees.FirstOrDefault(e => e.Id == id);
             if (emp == null)
             {
                 return NotFound(); // 404
@@ -52,7 +68,7 @@ namespace HRMS.Controllers
         [HttpPost("add")]
         public IActionResult Add([FromBody] SaveEmployeeDto employeeDto)
         {
-            long newId = employes.Any() ? employes.Max(e => e.Id) + 1 :1;
+            long newId = _dbContext.Employees.Any() ? employes.Max(e => e.Id) + 1 :1;
             var newEmployee = new Employee
             {
                 Id = newId,
@@ -68,7 +84,7 @@ namespace HRMS.Controllers
         [HttpPut("update")]
         public IActionResult Update ([FromBody] SaveEmployeeDto updateDto)
         {
-            var emp = employes.FirstOrDefault(x => x.Id == updateDto.Id);
+            var emp = _dbContext.Employees.FirstOrDefault(x => x.Id == updateDto.Id);
           
             if (emp == null)
                return NotFound("not found emp");
@@ -84,14 +100,16 @@ namespace HRMS.Controllers
         [HttpDelete("delete/{id}")]
         public IActionResult Delete(long id)
         {
-            var employee = employes.FirstOrDefault(x => x.Id == id);
+            var employee = _dbContext.Employees.FirstOrDefault(x => x.Id == id);
             if(employee ==null)
             {
                 return NotFound("Employee Does Not Exist");
             }
-            employes.Remove(employee);
+            _dbContext.Employees.Remove(employee);
             return Ok("deleted succesfully");
         }
+
+        #region testing
         [HttpGet("Test")]
         public IActionResult Test()
         {
@@ -104,5 +122,6 @@ namespace HRMS.Controllers
              var da = employes.FirstOrDefault().Id+1;
             return Ok(da);
         }
+        #endregion
     }
 }
