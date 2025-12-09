@@ -8,8 +8,8 @@
         public string? PositionName { get; set; }
         public DateTime? BrithDate { get; set; }   
         public string? Email { get; set; }
-        public Decimal? Salary { get; set; }
-        public Decimal? MangerId { get; set; }
+        public decimal? Salary { get; set; }
+        public long? MangerId { get; set; }
         public long? DepartmentId { get; set; }
         public string? DepartmentName { get; set; }
 
