@@ -45,35 +45,50 @@ namespace HRMS.Controllers
                              ManagerName = emp.Manager.FirstName
 
                          });
-        //var result = _dbContext.Employees.AsNoTracking().Where(emp=> employeeDto.positionId ==null || ).ToList();
+
+
+            //var result = _dbContext.Employees.AsNoTracking().Where(emp=> employeeDto.positionId ==null || ).ToList();
             return Ok(result);//200
         }
 
         [HttpGet("get-by-id/{id}")]//route parameter
         public async Task<IActionResult> GetById(long id)
         {
-            var emp = await _dbContext.Employees.Select(emp=>new EmployeeDto
+            try
             {
-                Id = emp.Id,
-                Name = emp.FirstName + " " + emp.LastName,
-                PositionName =emp.Lookup.Name,
-                BrithDate = emp.BrithDate,
-                Email = emp.Email,
-                Salary =emp.Salary,
-                DepartmentId = emp.DepartmentId,
-                DepartmentName = emp.Department.Name,
-                MangerId = emp.ManagerId,
-                ManagerName = emp.Manager.FirstName
-                
-           
-            }).FirstOrDefaultAsync(x=>x.Id == id);
 
-            if (emp == null)
-            {
-                return NotFound(); // 404
+
+                var emp = await _dbContext.Employees.Select(emp => new EmployeeDto
+                {
+                    Id = emp.Id,
+                    Name = emp.FirstName + " " + emp.LastName,
+                    PositionName = emp.Lookup.Name,
+                    BrithDate = emp.BrithDate,
+                    Email = emp.Email,
+                    Salary = emp.Salary,
+                    DepartmentId = emp.DepartmentId,
+                    DepartmentName = emp.Department.Name,
+                    MangerId = emp.ManagerId,
+                    ManagerName = emp.Manager.FirstName
+
+
+                }).FirstOrDefaultAsync(x => x.Id == id);//Projection SELECT
+
+                //  await _dbContext.Employees.Include(x=>x.Lookup).Include(x=>x.Manager).ThenInclude(x=>x.Lookup).FirstOrDefaultAsync(x => x.Id == id); //Eager loading
+
+                if (emp == null)
+                {
+                    return NotFound(); // 404
+                }
+                return Ok(emp); // 200
             }
-
-            return Ok(emp); // 200
+          
+            catch (Exception ex)
+            {
+                //_logger.LogError(ex, "Error getting employee {EmployeeId}", id);
+                return StatusCode(500, "An error occurred while processing your request");
+            }
+           
         }
         [HttpPost("add")]
         public IActionResult Add([FromBody] SaveEmployeeDto employeeDto)
