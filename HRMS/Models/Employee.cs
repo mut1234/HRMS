@@ -12,11 +12,9 @@ namespace HRMS.Models
         public string LastName { get; set; }
         [MaxLength(50)]
         public string? Email { get; set; }
-
-        public string Name { get; set; }
         public decimal Salary { get; set; }
         public DateTime? BrithDate { get; set; }
-        public Department Department { get; set; }
+        public Department? Department { get; set; }
 
         [ForeignKey("Department")]
         public long? DepartmentId { get; set; }
