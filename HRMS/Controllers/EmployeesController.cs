@@ -2,6 +2,7 @@
 using HRMS.Dto.Employees;
 using HRMS.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace HRMS.Controllers
 {
@@ -24,48 +25,55 @@ namespace HRMS.Controllers
         [HttpGet("get-by-criteria")]
         public IActionResult GetByCriteria([FromQuery] SearchEmployeeDto employeeDto)
         {
-            var result = from emp in _dbContext.Employees
-                         from dep in _dbContext.Departments.Where(d => d.Id == emp.DepartmentId).DefaultIfEmpty() //left join
-                         from mgr in _dbContext.Employees.Where(m => m.Id == emp.ManagerId).DefaultIfEmpty() //left join
-                         from pos in _dbContext.Lookups.Where(p => p.Id == emp.PositionId) 
-                                                                                                            //join dep in _dbContext.Departments on emp.Id equals dep.
-                         where
-                         (employeeDto.positionId == null || emp.PositionId == employeeDto.positionId)&&
-                         (employeeDto.name == null || emp.Name.ToUpper().Contains(employeeDto.name.ToUpper()))
-                         orderby emp.Id descending
-                         select new EmployeeDto
-                         {   Id = emp.Id,
+            var result =  _dbContext.Employees.AsNoTracking()
+                       .Where(emp=>
+                         (employeeDto.positionId == null || emp.PositionId == employeeDto.positionId) &&
+                         (employeeDto.name == null || emp.FirstName.ToUpper().Contains(employeeDto.name.ToUpper()))
+                         ).OrderByDescending(emp => emp.Id)
+                         .Select (emp => new EmployeeDto
+                         {
+                             Id = emp.Id,
                              Name = emp.FirstName + " " + emp.LastName,
-                             PositionName  = pos.Name,
+                             PositionName = emp.Lookup.Name,
+                             PositionId=emp.PositionId,
                              BrithDate = emp.BrithDate,
                              Email = emp.Email,
                              Salary = emp.Salary,
                              DepartmentId = emp.DepartmentId,
-                             DepartmentName = dep.Name,
+                             DepartmentName = emp.Department.Name,
                              MangerId = emp.ManagerId,
+                             ManagerName = emp.Manager.FirstName
 
-
-                         };
+                         });
+        //var result = _dbContext.Employees.AsNoTracking().Where(emp=> employeeDto.positionId ==null || ).ToList();
             return Ok(result);//200
         }
 
         [HttpGet("get-by-id/{id}")]//route parameter
-        public IActionResult GetById(long id)
+        public async Task<IActionResult> GetById(long id)
         {
-            var emp = _dbContext.Employees.FirstOrDefault(e => e.Id == id);
+            var emp = await _dbContext.Employees.Select(emp=>new EmployeeDto
+            {
+                Id = emp.Id,
+                Name = emp.FirstName + " " + emp.LastName,
+                PositionName =emp.Lookup.Name,
+                BrithDate = emp.BrithDate,
+                Email = emp.Email,
+                Salary =emp.Salary,
+                DepartmentId = emp.DepartmentId,
+                DepartmentName = emp.Department.Name,
+                MangerId = emp.ManagerId,
+                ManagerName = emp.Manager.FirstName
+                
+           
+            }).FirstOrDefaultAsync(x=>x.Id == id);
+
             if (emp == null)
             {
                 return NotFound(); // 404
             }
-            var employeeDto = new EmployeeDto
-            {
-                Id = emp.Id,
-                Name = emp.FirstName + " " + emp.LastName,
-              //  Position = emp.Position,
-                BrithDate = emp.BrithDate,
-                Email = emp.Email
-            };
-            return Ok(employeeDto); // 200
+
+            return Ok(emp); // 200
         }
         [HttpPost("add")]
         public IActionResult Add([FromBody] SaveEmployeeDto employeeDto)
@@ -73,15 +81,18 @@ namespace HRMS.Controllers
          //   long newId = _dbContext.Employees.Any() ? employes.Max(e => e.Id) + 1 :1;
             var newEmployee = new Employee
             {
-                Id = 0,
                 FirstName = employeeDto.FirstName,
                 LastName = employeeDto.LastName,
                 Email = employeeDto.Email,
-               // Position = employeeDto.Position,
-                BrithDate = employeeDto.BrithDate
+                PositionId = employeeDto.PositionId,
+                BrithDate = employeeDto.BirthDate,
+                Salary =employeeDto.Salary,
+                DepartmentId=employeeDto.DepartmentId,
+                ManagerId=employeeDto.ManagerId
             };
             _dbContext.Employees.Add(newEmployee);
-            return Ok(newEmployee);
+            _dbContext.SaveChanges();
+            return Ok();
         }
         [HttpPut("update")]
         public IActionResult Update ([FromBody] SaveEmployeeDto updateDto)
@@ -94,7 +105,7 @@ namespace HRMS.Controllers
             emp.FirstName = updateDto.FirstName;
             emp.LastName = updateDto.LastName;
             emp.Email = updateDto.Email;
-            emp.BrithDate = updateDto.BrithDate;
+            emp.BrithDate = updateDto.BirthDate;
          //   emp.Position = updateDto.Position;
 
             return Ok("updated succesfully");

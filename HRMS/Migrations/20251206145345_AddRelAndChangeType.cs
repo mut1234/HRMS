@@ -25,6 +25,7 @@ namespace HRMS.Migrations
                 //name: "FK_Employees_Departments_DepartmentId",
                 //table: "Employees");
 
+
                 migrationBuilder.AlterColumn<long>(
                     name: "ManagerId",
                     table: "Employees",
