@@ -4,6 +4,7 @@ using HRMS.DbContexts;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace HRMS.Migrations
 {
     [DbContext(typeof(HRMSContext))]
-    partial class HRMSContextModelSnapshot : ModelSnapshot
+    [Migration("20251210081712_new_column_userId")]
+    partial class new_column_userId
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -213,7 +216,7 @@ namespace HRMS.Migrations
                         new
                         {
                             Id = 1L,
-                            HashedPassword = "$2a$11$oRZUJZIpM0sRP855lUEEZe5JZ4CAL1UNGpFjEj6lSGx.wgbZ/na8W",
+                            HashedPassword = "$2a$11$58OInCwBT3xDeI/uFShdau1oYw83SXE9WkONDVBfh/uWwtRt89lwO",
                             IsAdmin = true,
                             Username = "Admin"
                         });

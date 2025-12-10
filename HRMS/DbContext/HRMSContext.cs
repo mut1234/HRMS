@@ -25,11 +25,19 @@ namespace HRMS.DbContexts
                     new Lookup { Id = 7, MajorCode = 1, MinorCode = 2, Name = "Adminstrative" },
                     new Lookup { Id = 8, MajorCode = 1, MinorCode = 3, Name = "Technical" }
 
-
                 );
+            modelBuilder.Entity<User>().HasIndex( x => x.Username ).IsUnique();
+            modelBuilder.Entity<Employee>().HasIndex( x => x.UserId).IsUnique();// buz 1 to 1 rel so to make one from employee we need this
+
+            modelBuilder.Entity<User>().HasData(
+                new User { Id =1, Username="Admin" , IsAdmin = true , HashedPassword = "$2a$11$oRZUJZIpM0sRP855lUEEZe5JZ4CAL1UNGpFjEj6lSGx.wgbZ/na8W" } // Admin@123
+                );
+
         }
+
         public DbSet<Employee> Employees { get; set; }
         public DbSet<Department> Departments { get; set; }
         public DbSet<Lookup> Lookups { get; set; }
+        public DbSet<User> Users { get; set; }
     }
 }

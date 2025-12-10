@@ -27,5 +27,9 @@ namespace HRMS.Models
         [ForeignKey("Lookup")]
         public long PositionId { get; set; }
 
+        public User User { get; set; }
+        [ForeignKey("User")]
+        public long? UserId { get; set; }
+
     }
 }
