@@ -10,6 +10,7 @@
         public string? Email { get; set; }
         public decimal? Salary { get; set; }
         public long? MangerId { get; set; }
+        public long? userId { get; set; }
         public long? DepartmentId { get; set; }
         public string? DepartmentName { get; set; }
         public string? ManagerName { get; set; }

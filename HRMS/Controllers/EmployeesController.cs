@@ -1,11 +1,14 @@
 ﻿using HRMS.DbContexts;
 using HRMS.Dto.Employees;
 using HRMS.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace HRMS.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class EmployeesController : ControllerBase
@@ -25,6 +28,9 @@ namespace HRMS.Controllers
         [HttpGet("get-by-criteria")]
         public IActionResult GetByCriteria([FromQuery] SearchEmployeeDto employeeDto)
         {
+            var role = User.FindFirst(ClaimTypes.Role)?.Value;
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            
             var result =  _dbContext.Employees.AsNoTracking()
                        .Where(emp=>
                          (employeeDto.positionId == null || emp.PositionId == employeeDto.positionId) &&
@@ -42,11 +48,15 @@ namespace HRMS.Controllers
                              DepartmentId = emp.DepartmentId,
                              DepartmentName = emp.Department.Name,
                              MangerId = emp.ManagerId,
-                             ManagerName = emp.Manager.FirstName
+                             ManagerName = emp.Manager.FirstName,
+                             userId = emp.UserId
 
                          });
 
-
+            if(role?.ToUpper() != "ADMIN" && role?.ToUpper() == "HR")
+            {
+                result = result.Where(x => x.userId == long.Parse(userId));
+            }
             //var result = _dbContext.Employees.AsNoTracking().Where(emp=> employeeDto.positionId ==null || ).ToList();
             return Ok(result);//200
         }
@@ -56,7 +66,8 @@ namespace HRMS.Controllers
         {
             try
             {
-
+                var role = User.FindFirst(ClaimTypes.Role)?.Value;
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
                 var emp = await _dbContext.Employees.Select(emp => new EmployeeDto
                 {
@@ -69,18 +80,26 @@ namespace HRMS.Controllers
                     DepartmentId = emp.DepartmentId,
                     DepartmentName = emp.Department.Name,
                     MangerId = emp.ManagerId,
-                    ManagerName = emp.Manager.FirstName
+                    ManagerName = emp.Manager.FirstName,
+                    userId = emp.UserId
 
 
                 }).FirstOrDefaultAsync(x => x.Id == id);//Projection SELECT
-
+                 
                 //  await _dbContext.Employees.Include(x=>x.Lookup).Include(x=>x.Manager).ThenInclude(x=>x.Lookup).FirstOrDefaultAsync(x => x.Id == id); //Eager loading
 
                 if (emp == null)
                 {
                     return NotFound(); // 404
                 }
-                return Ok(emp); // 200
+
+                if (role?.ToUpper() != "ADMIN" && role?.ToUpper() == "HR")
+                {
+                    if (emp.userId != long.Parse(userId))
+                        return Forbid();
+                }
+
+                    return Ok(emp); // 200
             }
           
             catch (Exception ex)
@@ -88,12 +107,33 @@ namespace HRMS.Controllers
                 //_logger.LogError(ex, "Error getting employee {EmployeeId}", id);
                 return StatusCode(500, "An error occurred while processing your request");
             }
-           
+
         }
+        [Authorize(Roles ="HR,Admin")]
         [HttpPost("add")]
         public IActionResult Add([FromBody] SaveEmployeeDto employeeDto)
         {
-         //   long newId = _dbContext.Employees.Any() ? employes.Max(e => e.Id) + 1 :1;
+            long? managerId = employeeDto.ManagerId;
+            if (managerId.HasValue && managerId > 0)
+            {
+                var existManger = _dbContext.Employees.Any(e => e.UserId == managerId);
+                if (!existManger)
+                    managerId = null;
+            }
+            
+            var user = new User()
+            {   Id=0,   
+                Username=$"{employeeDto.FirstName}_{employeeDto.LastName}_HRMS",
+                HashedPassword =BCrypt.Net.BCrypt.HashPassword($"{employeeDto.FirstName}@123"),
+                IsAdmin = false
+            };
+            var isUsername = _dbContext.Users.Any(x => x.Username.ToUpper() == user.Username.ToUpper());
+            
+            if(isUsername)
+            return BadRequest("Username Alredy exits");
+
+            _dbContext.Users.Add(user);
+
             var newEmployee = new Employee
             {
                 FirstName = employeeDto.FirstName,
@@ -103,12 +143,14 @@ namespace HRMS.Controllers
                 BrithDate = employeeDto.BirthDate,
                 Salary =employeeDto.Salary,
                 DepartmentId=employeeDto.DepartmentId,
-                ManagerId=employeeDto.ManagerId
+                ManagerId= managerId,
+                User = user
             };
             _dbContext.Employees.Add(newEmployee);
             _dbContext.SaveChanges();
             return Ok();
         }
+        [Authorize]
         [HttpPut("update")]
         public IActionResult Update ([FromBody] SaveEmployeeDto updateDto)
         {

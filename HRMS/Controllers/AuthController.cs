@@ -15,9 +15,11 @@ namespace HRMS.Controllers
     public class AuthController : ControllerBase
     {
         private readonly HRMSContext _dbContext;
-        public AuthController(HRMSContext dbContext) 
+        private readonly IConfiguration _configuration;
+        public AuthController(HRMSContext dbContext ,IConfiguration configuration) 
         {
             _dbContext = dbContext;
+            _configuration = configuration;
         }
 
         [HttpPost("Login")]
@@ -70,7 +72,7 @@ namespace HRMS.Controllers
 
             //Secert Key = "EWEED#2!@r#dwef$##@@$$$TRTERF"
 
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("EWEED#2!@r#dwef$##@@$$243tge$TRTERF"));//to array asci code
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:key"]));//to array asci code
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);//signing the token
 
             var tokenSettings = new JwtSecurityToken(
